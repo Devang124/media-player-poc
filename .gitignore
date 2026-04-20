@@ -1,0 +1,14 @@
+# Node
+node_modules/
+.env
+uploads/
+
+# macOS
+.DS_Store
+
+# iOS   
+DerivedData/
+build/
+*.xcworkspace
+*.xcuserdata
+*.xcuserstate
