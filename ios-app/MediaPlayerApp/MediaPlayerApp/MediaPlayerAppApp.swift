@@ -11,7 +11,7 @@ import SwiftUI
 struct MediaPlayerAppApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
         }
     }
 }
