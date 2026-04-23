@@ -53,8 +53,29 @@ struct PlayerView: View {
                         ProgressView().tint(Color(red: 0.6, green: 0.4, blue: 1.0))
                     }
                 } else {
-                    AudioVisualizerPlaceholder()
+                    if let urlString = mediaItem.thumbnailUrl, let url = URL(string: urlString) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty:
+                                AudioVisualizerPlaceholder()
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 300, height: 300)
+                                    .cornerRadius(24)
+                                    .shadow(color: Color(red: 0.6, green: 0.4, blue: 1.0).opacity(0.3), radius: 20, y: 10)
+                            case .failure:
+                                AudioVisualizerPlaceholder()
+                            @unknown default:
+                                AudioVisualizerPlaceholder()
+                            }
+                        }
                         .padding(.vertical, 40)
+                    } else {
+                        AudioVisualizerPlaceholder()
+                            .padding(.vertical, 40)
+                    }
                 }
                 
                 Spacer()
@@ -72,9 +93,27 @@ struct PlayerView: View {
                             .foregroundColor(Color(red: 0.6, green: 0.4, blue: 1.0))
                     }
                     
+                    // Progress Bar
+                    VStack(spacing: 8) {
+                        Slider(value: Binding(
+                            get: { playerManager.currentTime },
+                            set: { newValue in playerManager.seek(to: newValue) }
+                        ), in: 0...(playerManager.duration > 0 ? playerManager.duration : 1))
+                        .accentColor(Color(red: 0.6, green: 0.4, blue: 1.0))
+                        
+                        HStack {
+                            Text(formatTime(playerManager.currentTime))
+                            Spacer()
+                            Text(formatTime(playerManager.duration))
+                        }
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray)
+                    }
+                    .padding(.horizontal, 32)
+                    
                     HStack(spacing: 50) {
-                        Button(action: { }) {
-                            Image(systemName: "backward.fill")
+                        Button(action: { playerManager.seek(to: max(0, playerManager.currentTime - 15)) }) {
+                            Image(systemName: "gobackward.15")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.white)
                         }
@@ -92,8 +131,8 @@ struct PlayerView: View {
                             }
                         }
                         
-                        Button(action: { }) {
-                            Image(systemName: "forward.fill")
+                        Button(action: { playerManager.seek(to: min(playerManager.duration, playerManager.currentTime + 15)) }) {
+                            Image(systemName: "goforward.15")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.white)
                         }
@@ -109,6 +148,13 @@ struct PlayerView: View {
         .onDisappear {
             playerManager.stop()
         }
+    }
+    
+    private func formatTime(_ time: Double) -> String {
+        if time.isNaN || time.isInfinite { return "0:00" }
+        let minutes = Int(time) / 60
+        let seconds = Int(time) % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 }
 

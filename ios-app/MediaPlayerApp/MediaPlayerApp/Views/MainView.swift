@@ -12,18 +12,22 @@ struct MainView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             HomeView()
-                .tabItem {
-                    Label("Explore", systemImage: "play.circle.fill")
-                }
+                .tabItem { Label("Explore", systemImage: "play.circle.fill") }
                 .tag(0)
             
-            AdminView()
-                .tabItem {
-                    Label("Admin", systemImage: "lock.shield.fill")
-                }
+            SearchView()
+                .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 .tag(1)
+            
+            AdminView()
+                .tabItem { Label("Add Media", systemImage: "plus.square.fill") }
+                .tag(2)
+                
+            ProfileView()
+                .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
+                .tag(3)
         }
-        .accentColor(.purple)
+        .accentColor(Color(red: 0.6, green: 0.4, blue: 1.0))
         .preferredColorScheme(.dark)
     }
 }
