@@ -3,6 +3,28 @@ const fs = require("fs")
 const path = require("path")
 
 /**
+ * Helper to format media objects with full URLs
+ */
+const formatMediaItem = (req, media) => {
+    const host = req.get("host")
+    const baseUrl = `${req.protocol}://${host}/uploads/`.replace(/([^:]\/)\/+/g, "$1")
+    
+    if (Array.isArray(media)) {
+        return media.map(item => ({
+            ...item.toObject(),
+            fileUrl: baseUrl + item.fileUrl,
+            thumbnailUrl: item.thumbnailUrl ? baseUrl + item.thumbnailUrl : null
+        }))
+    }
+    
+    return {
+        ...media.toObject(),
+        fileUrl: baseUrl + media.fileUrl,
+        thumbnailUrl: media.thumbnailUrl ? baseUrl + media.thumbnailUrl : null
+    }
+}
+
+/**
  * @desc    Upload music file
  * @route   POST /api/media/upload-music
  * @access  Public
@@ -28,14 +50,7 @@ const uploadMusic = async (req, res) => {
             type: "music"
         })
 
-        // Return full URLs in response
-        const host = req.get("host")
-        const baseUrl = `${req.protocol}://${host}/uploads/`.replace(/([^:]\/)\/+/g, "$1") 
-        res.status(201).json({
-            ...media.toObject(),
-            fileUrl: baseUrl + media.fileUrl,
-            thumbnailUrl: baseUrl + media.thumbnailUrl
-        })
+        res.status(201).json(formatMediaItem(req, media))
     } catch (error) {
         console.error("Error in uploadMusic:", error)
         res.status(500).json({ message: "Server error during music upload" })
@@ -68,14 +83,7 @@ const uploadVideo = async (req, res) => {
             type: "video"
         })
 
-        // Return full URLs in response
-        const host = req.get("host")
-        const baseUrl = `${req.protocol}://${host}/uploads/`.replace(/([^:]\/)\/+/g, "$1") 
-        res.status(201).json({
-            ...media.toObject(),
-            fileUrl: baseUrl + media.fileUrl,
-            thumbnailUrl: baseUrl + media.thumbnailUrl
-        })
+        res.status(201).json(formatMediaItem(req, media))
     } catch (error) {
         console.error("Error in uploadVideo:", error)
         res.status(500).json({ message: "Server error during video upload" })
@@ -90,16 +98,7 @@ const uploadVideo = async (req, res) => {
 const getMusicList = async (req, res) => {
     try {
         const music = await Media.find({ type: "music" }).sort({ createdAt: -1 })
-        
-        const host = req.get("host")
-        const baseUrl = `${req.protocol}://${host}/uploads/`.replace(/([^:]\/)\/+/g, "$1") 
-        const musicWithUrls = music.map(item => ({
-            ...item.toObject(),
-            fileUrl: baseUrl + item.fileUrl,
-            thumbnailUrl: item.thumbnailUrl ? baseUrl + item.thumbnailUrl : null
-        }))
-
-        res.status(200).json(musicWithUrls)
+        res.status(200).json(formatMediaItem(req, music))
     } catch (error) {
         console.error("Error in getMusicList:", error)
         res.status(500).json({ message: "Server error fetching music list" })
@@ -114,19 +113,34 @@ const getMusicList = async (req, res) => {
 const getVideoList = async (req, res) => {
     try {
         const videos = await Media.find({ type: "video" }).sort({ createdAt: -1 })
-        
-        const host = req.get("host")
-        const baseUrl = `${req.protocol}://${host}/uploads/`.replace(/([^:]\/)\/+/g, "$1") 
-        const videosWithUrls = videos.map(item => ({
-            ...item.toObject(),
-            fileUrl: baseUrl + item.fileUrl,
-            thumbnailUrl: item.thumbnailUrl ? baseUrl + item.thumbnailUrl : null
-        }))
-
-        res.status(200).json(videosWithUrls)
+        res.status(200).json(formatMediaItem(req, videos))
     } catch (error) {
         console.error("Error in getVideoList:", error)
         res.status(500).json({ message: "Server error fetching video list" })
+    }
+}
+
+/**
+ * @desc    Search media files by title
+ * @route   GET /api/media/search
+ * @access  Public
+ */
+const searchMedia = async (req, res) => {
+    try {
+        const { query } = req.query
+        
+        if (!query || query.trim() === "") {
+            return res.status(200).json([])
+        }
+
+        const results = await Media.find({
+            title: { $regex: query, $options: "i" }
+        }).sort({ createdAt: -1 })
+
+        res.status(200).json(formatMediaItem(req, results))
+    } catch (error) {
+        console.error("Error in searchMedia:", error)
+        res.status(500).json({ message: "Server error during search" })
     }
 }
 
@@ -176,5 +190,6 @@ module.exports = {
     uploadVideo,
     getMusicList,
     getVideoList,
+    searchMedia,
     deleteMedia
 }
