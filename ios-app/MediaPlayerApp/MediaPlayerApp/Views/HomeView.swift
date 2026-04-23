@@ -86,21 +86,34 @@ struct MediaCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             ZStack {
-                // Background Gradient
-                LinearGradient(
-                    gradient: Gradient(colors: [Color(red: 0.6, green: 0.4, blue: 1.0).opacity(0.8), Color(red: 0.3, green: 0.5, blue: 1.0).opacity(0.8)]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .frame(width: 180, height: 240)
-                .cornerRadius(24)
-                .shadow(color: Color(red: 0.6, green: 0.4, blue: 1.0).opacity(0.3), radius: 15, y: 10)
+                // Background Thumbnail Image
+                if let thumbUrl = item.thumbnailUrl, let url = URL(string: thumbUrl) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 180, height: 240)
+                                .clipped()
+                                .cornerRadius(24)
+                        case .failure(_), .empty:
+                            placeholderGradient
+                        @unknown default:
+                            placeholderGradient
+                        }
+                    }
+                } else {
+                    placeholderGradient
+                }
                 
                 Image(systemName: item.type == .video ? "play.fill" : "music.note")
                     .foregroundColor(.white)
                     .font(.system(size: 40))
                     .shadow(radius: 5)
             }
+            .cornerRadius(24)
+            .shadow(color: Color(red: 0.6, green: 0.4, blue: 1.0).opacity(0.3), radius: 15, y: 10)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
@@ -116,6 +129,15 @@ struct MediaCard: View {
             .padding(.horizontal, 4)
         }
         .frame(width: 180)
+    }
+
+    private var placeholderGradient: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [Color(red: 0.6, green: 0.4, blue: 1.0).opacity(0.8), Color(red: 0.3, green: 0.5, blue: 1.0).opacity(0.8)]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .frame(width: 180, height: 240)
     }
 }
 

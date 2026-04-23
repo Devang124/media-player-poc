@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct AdminView: View {
     @StateObject private var viewModel = UploadViewModel()
     @State private var showFilePicker = false
+    @State private var showThumbnailPicker = false
     
     var body: some View {
         NavigationView {
@@ -35,14 +36,34 @@ struct AdminView: View {
                         
                         // File Selection
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("FILE")
+                            Text("MEDIA FILE")
                                 .font(.system(size: 11, weight: .bold, design: .rounded))
                                 .foregroundColor(Color(red: 0.6, green: 0.4, blue: 1.0))
                             
                             Button(action: { showFilePicker = true }) {
                                 HStack {
                                     Image(systemName: viewModel.selectedFileURL == nil ? "plus.circle.fill" : "doc.fill")
-                                    Text(viewModel.selectedFileURL?.lastPathComponent ?? "Choose File")
+                                    Text(viewModel.selectedFileURL?.lastPathComponent ?? "Choose Media File")
+                                        .lineLimit(1)
+                                    Spacer()
+                                }
+                                .padding()
+                                .background(Color.white.opacity(0.05))
+                                .cornerRadius(12)
+                                .foregroundColor(.white)
+                            }
+                        }
+
+                        // Thumbnail Selection
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("THUMBNAIL IMAGE")
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(red: 0.6, green: 0.4, blue: 1.0))
+                            
+                            Button(action: { showThumbnailPicker = true }) {
+                                HStack {
+                                    Image(systemName: viewModel.selectedThumbnailURL == nil ? "photo.fill" : "photo.on.rectangle.angled")
+                                    Text(viewModel.selectedThumbnailURL?.lastPathComponent ?? "Choose Thumbnail Image")
                                         .lineLimit(1)
                                     Spacer()
                                 }
@@ -109,6 +130,20 @@ struct AdminView: View {
                     }
                 case .failure(let error):
                     viewModel.errorMessage = "Failed to select file: \(error.localizedDescription)"
+                }
+            }
+            .fileImporter(
+                isPresented: $showThumbnailPicker,
+                allowedContentTypes: [.image, .jpeg, .png],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    if let selectedFile = urls.first {
+                        viewModel.selectedThumbnailURL = selectedFile
+                    }
+                case .failure(let error):
+                    viewModel.errorMessage = "Failed to select thumbnail: \(error.localizedDescription)"
                 }
             }
         }

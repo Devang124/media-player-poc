@@ -35,7 +35,7 @@ class NetworkService {
         }
     }
     
-    func uploadMedia(type: MediaType, title: String, fileURL: URL) async throws {
+    func uploadMedia(type: MediaType, title: String, fileURL: URL, thumbnailURL: URL) async throws {
         let endpoint = type == .video ? APIConstants.Endpoints.uploadVideo : APIConstants.Endpoints.uploadMusic
         guard let url = URL(string: APIConstants.url(for: endpoint)) else { throw NetworkError.invalidURL }
         
@@ -44,15 +44,14 @@ class NetworkService {
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         
-        // Construct body
         var body = Data()
         
-        // Title field (always use "title" as per simplified model)
+        // 1. Title
         body.append("--\(boundary)\r\n")
         body.append("Content-Disposition: form-data; name=\"title\"\r\n\r\n")
         body.append("\(title)\r\n")
         
-        // File field
+        // 2. Media File
         let fileName = fileURL.lastPathComponent
         let mimeType = type == .video ? "video/mp4" : "audio/mpeg"
         
@@ -64,6 +63,20 @@ class NetworkService {
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n")
         body.append("Content-Type: \(mimeType)\r\n\r\n")
         body.append(fileData)
+        body.append("\r\n")
+        
+        // 3. Thumbnail Image
+        let thumbName = thumbnailURL.lastPathComponent
+        let thumbMime = "image/jpeg"
+        
+        let isThumbSecured = thumbnailURL.startAccessingSecurityScopedResource()
+        defer { if isThumbSecured { thumbnailURL.stopAccessingSecurityScopedResource() } }
+        let thumbData = try Data(contentsOf: thumbnailURL)
+        
+        body.append("--\(boundary)\r\n")
+        body.append("Content-Disposition: form-data; name=\"thumbnail\"; filename=\"\(thumbName)\"\r\n")
+        body.append("Content-Type: \(thumbMime)\r\n\r\n")
+        body.append(thumbData)
         body.append("\r\n")
         
         body.append("--\(boundary)--\r\n")

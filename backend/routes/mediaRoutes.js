@@ -17,10 +17,16 @@ router.get("/music-list", getMusicList)
 router.get("/video-list", getVideoList)
 
 // @route   POST /api/media/upload-music
-router.post("/upload-music", upload.single("file"), uploadMusic)
+router.post("/upload-music", upload.fields([
+    { name: "file", maxCount: 1 },
+    { name: "thumbnail", maxCount: 1 }
+]), uploadMusic)
 
 // @route   POST /api/media/upload-video
-router.post("/upload-video", upload.single("file"), uploadVideo)
+router.post("/upload-video", upload.fields([
+    { name: "file", maxCount: 1 },
+    { name: "thumbnail", maxCount: 1 }
+]), uploadVideo)
 
 // @route   DELETE /api/media/:id
 router.delete("/:id", deleteMedia)

@@ -44,20 +44,41 @@ class StreamingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
         }
         
         do {
-            // Using AsyncSequence: URLSession.bytes
             let (bytes, response) = try await URLSession.shared.bytes(for: request)
             
-            // Fill content info
             if let httpResponse = response as? HTTPURLResponse {
+                // If it's a 4xx or 5xx error, fail early
+                if !(200...299).contains(httpResponse.statusCode) {
+                    loadingRequest.finishLoading(with: NSError(domain: "Network", code: httpResponse.statusCode))
+                    return
+                }
+
+                // Fill content info with TOTAL length, not just segment length
                 if let infoRequest = loadingRequest.contentInformationRequest {
-                    infoRequest.contentType = httpResponse.mimeType
-                    infoRequest.contentLength = httpResponse.expectedContentLength
+                    // Try to get total length from Content-Range header: "bytes 0-100/12345"
+                    var totalLength: Int64 = httpResponse.expectedContentLength
+                    if let contentRange = httpResponse.allHeaderFields["Content-Range"] as? String,
+                       let totalString = contentRange.split(separator: "/").last,
+                       let total = Int64(totalString) {
+                        totalLength = total
+                    } else if httpResponse.statusCode == 200 {
+                        totalLength = httpResponse.expectedContentLength
+                    }
+
+                    var uti = "public.data"
+                    if let mimeType = httpResponse.mimeType {
+                        if mimeType.contains("mpeg") { uti = "public.mp3" }
+                        else if mimeType.contains("mp4") { uti = "public.mpeg-4" }
+                    }
+
+                    infoRequest.contentType = uti
+                    infoRequest.contentLength = totalLength
                     infoRequest.isByteRangeAccessSupported = true
                 }
             }
             
             var buffer = Data()
-            let chunkSize = 64 * 1024 // 64KB segments
+            let chunkSize = 64 * 1024 
             
             for try await byte in bytes {
                 if Task.isCancelled { break }
@@ -70,7 +91,6 @@ class StreamingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
                 }
             }
             
-            // Send remaining buffer
             if !buffer.isEmpty {
                 dataRequest.respond(with: buffer)
             }

@@ -12,6 +12,11 @@ const mediaSchema = new mongoose.Schema({
         required: true
     },
 
+    thumbnailUrl: {
+        type: String,
+        required: true
+    },
+
     type: {
         type: String,
         enum: ["music", "video"],

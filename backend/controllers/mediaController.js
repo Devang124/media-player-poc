@@ -9,8 +9,8 @@ const path = require("path")
  */
 const uploadMusic = async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: "Please upload a music file" })
+        if (!req.files || !req.files['file'] || !req.files['thumbnail']) {
+            return res.status(400).json({ message: "Please upload both music and thumbnail files" })
         }
 
         const { title } = req.body
@@ -18,13 +18,24 @@ const uploadMusic = async (req, res) => {
             return res.status(400).json({ message: "Please provide a title" })
         }
 
+        const fileUrl = req.files['file'][0].filename
+        const thumbnailUrl = req.files['thumbnail'][0].filename
+
         const media = await Media.create({
             title,
-            fileUrl: req.file.filename,
+            fileUrl,
+            thumbnailUrl,
             type: "music"
         })
 
-        res.status(201).json(media)
+        // Return full URLs in response
+        const host = req.get("host")
+        const baseUrl = `${req.protocol}://${host}/uploads/`.replace(/([^:]\/)\/+/g, "$1") 
+        res.status(201).json({
+            ...media.toObject(),
+            fileUrl: baseUrl + media.fileUrl,
+            thumbnailUrl: baseUrl + media.thumbnailUrl
+        })
     } catch (error) {
         console.error("Error in uploadMusic:", error)
         res.status(500).json({ message: "Server error during music upload" })
@@ -38,8 +49,8 @@ const uploadMusic = async (req, res) => {
  */
 const uploadVideo = async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: "Please upload a video file" })
+        if (!req.files || !req.files['file'] || !req.files['thumbnail']) {
+            return res.status(400).json({ message: "Please upload both video and thumbnail files" })
         }
 
         const { title } = req.body
@@ -47,13 +58,24 @@ const uploadVideo = async (req, res) => {
             return res.status(400).json({ message: "Please provide a title" })
         }
 
+        const fileUrl = req.files['file'][0].filename
+        const thumbnailUrl = req.files['thumbnail'][0].filename
+
         const media = await Media.create({
             title,
-            fileUrl: req.file.filename,
+            fileUrl,
+            thumbnailUrl,
             type: "video"
         })
 
-        res.status(201).json(media)
+        // Return full URLs in response
+        const host = req.get("host")
+        const baseUrl = `${req.protocol}://${host}/uploads/`.replace(/([^:]\/)\/+/g, "$1") 
+        res.status(201).json({
+            ...media.toObject(),
+            fileUrl: baseUrl + media.fileUrl,
+            thumbnailUrl: baseUrl + media.thumbnailUrl
+        })
     } catch (error) {
         console.error("Error in uploadVideo:", error)
         res.status(500).json({ message: "Server error during video upload" })
@@ -68,7 +90,16 @@ const uploadVideo = async (req, res) => {
 const getMusicList = async (req, res) => {
     try {
         const music = await Media.find({ type: "music" }).sort({ createdAt: -1 })
-        res.status(200).json(music)
+        
+        const host = req.get("host")
+        const baseUrl = `${req.protocol}://${host}/uploads/`.replace(/([^:]\/)\/+/g, "$1") 
+        const musicWithUrls = music.map(item => ({
+            ...item.toObject(),
+            fileUrl: baseUrl + item.fileUrl,
+            thumbnailUrl: item.thumbnailUrl ? baseUrl + item.thumbnailUrl : null
+        }))
+
+        res.status(200).json(musicWithUrls)
     } catch (error) {
         console.error("Error in getMusicList:", error)
         res.status(500).json({ message: "Server error fetching music list" })
@@ -83,7 +114,16 @@ const getMusicList = async (req, res) => {
 const getVideoList = async (req, res) => {
     try {
         const videos = await Media.find({ type: "video" }).sort({ createdAt: -1 })
-        res.status(200).json(videos)
+        
+        const host = req.get("host")
+        const baseUrl = `${req.protocol}://${host}/uploads/`.replace(/([^:]\/)\/+/g, "$1") 
+        const videosWithUrls = videos.map(item => ({
+            ...item.toObject(),
+            fileUrl: baseUrl + item.fileUrl,
+            thumbnailUrl: item.thumbnailUrl ? baseUrl + item.thumbnailUrl : null
+        }))
+
+        res.status(200).json(videosWithUrls)
     } catch (error) {
         console.error("Error in getVideoList:", error)
         res.status(500).json({ message: "Server error fetching video list" })
@@ -103,20 +143,23 @@ const deleteMedia = async (req, res) => {
             return res.status(404).json({ message: "Media not found" })
         }
 
-        // Construct file path
-        const filePath = path.join(__dirname, "..", "uploads", media.fileUrl)
-
-        // Delete file from uploads folder
-        if (fs.existsSync(filePath)) {
-            try {
-                fs.unlinkSync(filePath)
-            } catch (err) {
-                console.error("Error deleting file:", err)
-                // Continue to delete record from DB even if file deletion fails
+        // Delete files from uploads folder
+        const filesToDelete = [media.fileUrl, media.thumbnailUrl]
+        
+        filesToDelete.forEach(fileName => {
+            if (fileName) {
+                const filePath = path.join(__dirname, "..", "uploads", fileName)
+                if (fs.existsSync(filePath)) {
+                    try {
+                        fs.unlinkSync(filePath)
+                    } catch (err) {
+                        console.error(`Error deleting file ${fileName}:`, err)
+                    }
+                } else {
+                    console.warn("File to delete not found on disk:", filePath)
+                }
             }
-        } else {
-            console.warn("File to delete not found on disk:", filePath)
-        }
+        })
 
         // Delete record from database
         await Media.findByIdAndDelete(req.params.id)
