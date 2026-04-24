@@ -4,41 +4,67 @@ import Combine
 import MediaPlayer
 
 class CustomPlayer: ObservableObject {
-    private var asset: AVURLAsset?
-    private let loaderDelegate = StreamingResourceLoader()
-    private let queue = DispatchQueue(label: "com.mediaplayer.loader")
-    
     @Published var player: AVPlayer?
     @Published var isPlaying = false
     @Published var currentTime: Double = 0
     @Published var duration: Double = 0
+    @Published var isLoading = false
+    @Published var showRetry = false
     
     private var timeObserver: Any?
+    private var statusObserver: AnyCancellable?
+    private var loadingTimer: Timer?
     
     func setupPlayer(for urlString: String) {
-        guard let url = URL(string: urlString) else { return }
+        isLoading = true
+        showRetry = false
         
-        // Use a custom scheme to trigger the resource loader delegate
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        components?.scheme = "streaming" 
+        // Use Cache Manager to get optimized player
+        let player = VideoCacheManager.shared.getPlayer(for: urlString)
+        self.player = player
         
-        guard let streamingURL = components?.url else { return }
+        // Start timeout timer (5 seconds)
+        startLoadingTimer()
         
-        let asset = AVURLAsset(url: streamingURL)
-        asset.resourceLoader.setDelegate(loaderDelegate, queue: queue)
-        
-        let playerItem = AVPlayerItem(asset: asset)
-        self.player = AVPlayer(playerItem: playerItem)
-        self.isPlaying = false
-        
+        setupObservers(for: player)
         setupTimeObserver()
         setupRemoteTransportControls()
+    }
+    
+    private func setupObservers(for player: AVPlayer) {
+        // Observe buffer status
+        statusObserver = player.currentItem?.publisher(for: \.status)
+            .sink { [weak self] status in
+                if status == .readyToPlay {
+                    self?.isLoading = false
+                    self?.cancelLoadingTimer()
+                    self?.duration = player.currentItem?.duration.seconds ?? 0
+                } else if status == .failed {
+                    self?.isLoading = false
+                    self?.showRetry = true
+                    self?.cancelLoadingTimer()
+                }
+            }
         
-        // Add observers for playback state
-        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: playerItem, queue: .main) { _ in
-            self.isPlaying = false
-            self.player?.seek(to: .zero)
+        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main) { [weak self] _ in
+            self?.isPlaying = false
+            self?.player?.seek(to: .zero)
         }
+    }
+    
+    private func startLoadingTimer() {
+        cancelLoadingTimer()
+        loadingTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
+            if self?.isLoading == true {
+                self?.isLoading = false
+                self?.showRetry = true
+            }
+        }
+    }
+    
+    private func cancelLoadingTimer() {
+        loadingTimer?.invalidate()
+        loadingTimer = nil
     }
     
     func togglePlay() {
@@ -58,10 +84,10 @@ class CustomPlayer: ObservableObject {
             player?.removeTimeObserver(observer)
             timeObserver = nil
         }
-        player = nil
+        statusObserver?.cancel()
+        cancelLoadingTimer()
+        // We don't nullify player here if we want to keep it cached in VideoCacheManager
         isPlaying = false
-        currentTime = 0
-        duration = 0
     }
     
     func seek(to time: Double) {
@@ -71,12 +97,12 @@ class CustomPlayer: ObservableObject {
     private func setupTimeObserver() {
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self = self, let item = self.player?.currentItem else { return }
+            guard let self = self else { return }
             self.currentTime = time.seconds
             
             if self.duration == 0 {
-                let dur = item.duration.seconds
-                if !dur.isNaN {
+                let dur = self.player?.currentItem?.duration.seconds ?? 0
+                if !dur.isNaN && dur > 0 {
                     self.duration = dur
                     self.updateNowPlayingInfo()
                 }
@@ -86,16 +112,14 @@ class CustomPlayer: ObservableObject {
     
     private func setupRemoteTransportControls() {
         let commandCenter = MPRemoteCommandCenter.shared()
-
-        commandCenter.playCommand.addTarget { [unowned self] event in
+        commandCenter.playCommand.addTarget { [unowned self] _ in
             if !self.isPlaying {
                 self.togglePlay()
                 return .success
             }
             return .commandFailed
         }
-
-        commandCenter.pauseCommand.addTarget { [unowned self] event in
+        commandCenter.pauseCommand.addTarget { [unowned self] _ in
             if self.isPlaying {
                 self.togglePlay()
                 return .success
@@ -106,14 +130,12 @@ class CustomPlayer: ObservableObject {
     
     private func updateNowPlayingInfo() {
         var nowPlayingInfo = [String: Any]()
-        nowPlayingInfo[MPMediaItemPropertyTitle] = "MediaVibe Stream"
-
+        nowPlayingInfo[MPMediaItemPropertyTitle] = "Media Player"
         if duration > 0 {
             nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
             nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
         }
         nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = player?.rate ?? 0.0
-
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
 }

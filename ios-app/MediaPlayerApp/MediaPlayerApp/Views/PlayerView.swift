@@ -63,39 +63,71 @@ struct PlayerView: View {
                 
                 // Visual Content / Video
                 VStack {
-                    if mediaItem.type == .video {
-                        if let player = playerManager.player {
-                            VideoPlayer(player: player)
-                                .aspectRatio(16/9, contentMode: .fit)
-                                .frame(maxWidth: .infinity)
-                                .clipShape(RoundedRectangle(cornerRadius: 18))
-                                .shadow(color: Color.purple.opacity(0.4), radius: 12)
-                        } else {
-                            ProgressView().tint(Color(red: 0.6, green: 0.4, blue: 1.0))
-                        }
-                    } else {
-                        if let urlString = mediaItem.thumbnailUrl, let url = URL(string: urlString) {
-                            AsyncImage(url: url) { phase in
-                                switch phase {
-                                case .empty:
-                                    AudioVisualizerPlaceholder()
-                                case .success(let image):
-                                    image
-                                        .resizable()
-                                        .aspectRatio(16/9, contentMode: .fit)
-                                        .frame(maxWidth: .infinity)
-                                        .clipShape(RoundedRectangle(cornerRadius: 18))
-                                        .shadow(color: Color.purple.opacity(0.4), radius: 12)
-                                case .failure:
-                                    AudioVisualizerPlaceholder()
-                                @unknown default:
-                                    AudioVisualizerPlaceholder()
+                    ZStack {
+                        // Thumbnail Placeholder (Always shown until video is ready and playing)
+                        if !playerManager.isPlaying || playerManager.isLoading {
+                            if let urlString = mediaItem.thumbnailUrl, let url = URL(string: urlString) {
+                                AsyncImage(url: url) { phase in
+                                    if let image = phase.image {
+                                        image
+                                            .resizable()
+                                            .aspectRatio(16/9, contentMode: .fit)
+                                            .frame(maxWidth: .infinity)
+                                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                                    } else {
+                                        AudioVisualizerPlaceholder()
+                                    }
                                 }
+                            } else {
+                                AudioVisualizerPlaceholder()
                             }
-                        } else {
-                            AudioVisualizerPlaceholder()
+                        }
+                        
+                        // Actual Video Player
+                        if mediaItem.type == .video {
+                            if let player = playerManager.player {
+                                VideoPlayer(player: player)
+                                    .aspectRatio(16/9, contentMode: .fit)
+                                    .frame(maxWidth: .infinity)
+                                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                                    .opacity(playerManager.isPlaying && !playerManager.isLoading ? 1 : 0)
+                            }
+                        }
+                        
+                        // Overlay States
+                        if playerManager.isLoading {
+                            ProgressView()
+                                .tint(.white)
+                                .scaleEffect(1.5)
+                                .padding()
+                                .background(Circle().fill(Color.black.opacity(0.4)))
+                        }
+                        
+                        if playerManager.showRetry {
+                            Button(action: { playerManager.setupPlayer(for: mediaItem.fileUrl) }) {
+                                VStack(spacing: 8) {
+                                    Image(systemName: "arrow.clockwise.circle.fill")
+                                        .font(.system(size: 40))
+                                    Text("Retry Loading")
+                                        .font(.system(size: 14, weight: .bold))
+                                }
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.6)))
+                            }
+                        }
+                        
+                        // Play Button Overlay if not playing
+                        if !playerManager.isPlaying && !playerManager.isLoading && !playerManager.showRetry {
+                            Button(action: { playerManager.togglePlay() }) {
+                                Image(systemName: "play.circle.fill")
+                                    .font(.system(size: 70))
+                                    .foregroundColor(.white)
+                                    .shadow(radius: 10)
+                            }
                         }
                     }
+                    .shadow(color: Color.purple.opacity(0.4), radius: 12)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal)

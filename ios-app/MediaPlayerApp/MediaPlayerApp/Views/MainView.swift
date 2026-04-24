@@ -15,11 +15,11 @@ struct MainView: View {
                 .tabItem { Label("Explore", systemImage: "play.circle.fill") }
                 .tag(0)
             
-            MusicListView()
+            SearchView()
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 .tag(1)
             
-            AdminView()
+            UploadView()
                 .tabItem { Label("Add Media", systemImage: "plus.square.fill") }
                 .tag(2)
                 
