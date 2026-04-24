@@ -1,7 +1,7 @@
 import Foundation
 
 struct APIConstants {
-    static let baseURL = "http://10.0.61.108:3000/api/media"
+    static let baseURL = "http://10.0.61.110:3000/api/media"
     
     struct Endpoints {
         static let musicList = "/music-list"
