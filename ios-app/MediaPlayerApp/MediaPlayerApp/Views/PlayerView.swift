@@ -32,7 +32,7 @@ struct PlayerView: View {
                     Spacer()
                     
                     Menu {
-                        if let shareURL = URL(string: "http://localhost:3000\(mediaItem.fileUrl)") {
+                        if let shareURL = URL(string: "http://10.0.61.110:3000\(mediaItem.fileUrl)") {
                             ShareLink(item: shareURL) {
                                 Label("Share Media", systemImage: "square.and.arrow.up")
                             }

@@ -2,7 +2,7 @@ import Foundation
 
 class UserService {
     static let shared = UserService()
-    private let baseURL = "http://localhost:3000/api/users"
+    private let baseURL = "http://10.0.61.110:3000/api/users"
     
     private init() {}
     
