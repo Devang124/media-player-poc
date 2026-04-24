@@ -28,7 +28,10 @@ app.get("/", (req, res) => {
 
 // Routes
 const mediaRoutes = require("./routes/mediaRoutes")
+const userRoutes = require("./routes/userRoutes")
+
 app.use("/api/media", mediaRoutes)
+app.use("/api/users", userRoutes)
 
 // Serve uploads folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")))

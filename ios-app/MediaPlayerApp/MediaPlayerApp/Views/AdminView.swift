@@ -17,7 +17,7 @@ struct AdminView: View {
                     
                     VStack(alignment: .leading, spacing: 20) {
                         // Title Input
-                        CustomTextField(label: "MEDIA TITLE", text: $viewModel.title, placeholder: "e.g. My Awesome Video")
+                        AdminTextField(label: "MEDIA TITLE", text: $viewModel.title, placeholder: "e.g. My Awesome Video")
                         
                         // Media Type Selection
                         VStack(alignment: .leading, spacing: 8) {
@@ -168,7 +168,7 @@ struct AdminView: View {
     }
 }
 
-struct CustomTextField: View {
+struct AdminTextField: View {
     let label: String
     @Binding var text: String
     let placeholder: String

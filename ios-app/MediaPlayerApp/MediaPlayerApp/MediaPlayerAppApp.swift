@@ -9,9 +9,17 @@ import SwiftUI
 
 @main
 struct MediaPlayerAppApp: App {
+    @StateObject var userViewModel = UserViewModel()
+    
     var body: some Scene {
         WindowGroup {
-            MainView()
+            if userViewModel.isLoggedIn {
+                MainView()
+                    .environmentObject(userViewModel)
+            } else {
+                LoginView()
+                    .environmentObject(userViewModel)
+            }
         }
     }
 }

@@ -4,7 +4,10 @@ import AVKit
 struct PlayerView: View {
     let mediaItem: MediaItem
     @StateObject private var playerManager = CustomPlayer()
-    @Environment(\.presentationMode) var presentationMode
+    @StateObject private var viewModel = PlayerViewModel()
+    @State private var showDeleteAlert = false
+    @State private var showEditSheet = false
+    @State private var editedTitle = ""
     
     var body: some View {
         ZStack {
@@ -21,13 +24,31 @@ struct PlayerView: View {
                             .background(Circle().fill(Color.white.opacity(0.1)))
                     }
                     Spacer()
-                    Text(mediaItem.type == .video ? "Now Playing" : "Now Playing")
+                    Text("Now Playing")
                         .font(.system(size: 14, weight: .black, design: .rounded))
                         .tracking(2)
                         .foregroundColor(Color(red: 0.6, green: 0.4, blue: 1.0))
                         .textCase(.uppercase)
                     Spacer()
-                    Button(action: { }) {
+                    
+                    Menu {
+                        if let shareURL = URL(string: "http://localhost:3000\(mediaItem.fileUrl)") {
+                            ShareLink(item: shareURL) {
+                                Label("Share Media", systemImage: "square.and.arrow.up")
+                            }
+                        }
+                        
+                        Button(action: { 
+                            editedTitle = mediaItem.title
+                            showEditSheet = true 
+                        }) {
+                            Label("Edit Title", systemImage: "pencil")
+                        }
+                        
+                        Button(role: .destructive, action: { showDeleteAlert = true }) {
+                            Label("Delete Media", systemImage: "trash")
+                        }
+                    } label: {
                         Image(systemName: "ellipsis")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
@@ -41,42 +62,44 @@ struct PlayerView: View {
                 Spacer()
                 
                 // Visual Content / Video
-                if mediaItem.type == .video {
-                    if let player = playerManager.player {
-                        VideoPlayer(player: player)
-                            .frame(maxWidth: .infinity)
-                            .aspectRatio(16/9, contentMode: .fit)
-                            .cornerRadius(24)
-                            .shadow(color: Color(red: 0.6, green: 0.4, blue: 1.0).opacity(0.2), radius: 20, y: 10)
-                            .padding(24)
-                    } else {
-                        ProgressView().tint(Color(red: 0.6, green: 0.4, blue: 1.0))
-                    }
-                } else {
-                    if let urlString = mediaItem.thumbnailUrl, let url = URL(string: urlString) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .empty:
-                                AudioVisualizerPlaceholder()
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 300, height: 300)
-                                    .cornerRadius(24)
-                                    .shadow(color: Color(red: 0.6, green: 0.4, blue: 1.0).opacity(0.3), radius: 20, y: 10)
-                            case .failure:
-                                AudioVisualizerPlaceholder()
-                            @unknown default:
-                                AudioVisualizerPlaceholder()
-                            }
+                VStack {
+                    if mediaItem.type == .video {
+                        if let player = playerManager.player {
+                            VideoPlayer(player: player)
+                                .aspectRatio(16/9, contentMode: .fit)
+                                .frame(maxWidth: .infinity)
+                                .clipShape(RoundedRectangle(cornerRadius: 18))
+                                .shadow(color: Color.purple.opacity(0.4), radius: 12)
+                        } else {
+                            ProgressView().tint(Color(red: 0.6, green: 0.4, blue: 1.0))
                         }
-                        .padding(.vertical, 40)
                     } else {
-                        AudioVisualizerPlaceholder()
-                            .padding(.vertical, 40)
+                        if let urlString = mediaItem.thumbnailUrl, let url = URL(string: urlString) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .empty:
+                                    AudioVisualizerPlaceholder()
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .aspectRatio(16/9, contentMode: .fit)
+                                        .frame(maxWidth: .infinity)
+                                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                                        .shadow(color: Color.purple.opacity(0.4), radius: 12)
+                                case .failure:
+                                    AudioVisualizerPlaceholder()
+                                @unknown default:
+                                    AudioVisualizerPlaceholder()
+                                }
+                            }
+                        } else {
+                            AudioVisualizerPlaceholder()
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal)
+                .padding(.vertical, 20)
                 
                 Spacer()
                 
@@ -148,7 +171,45 @@ struct PlayerView: View {
         .onDisappear {
             playerManager.stop()
         }
+        .alert("Delete Media", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                Task {
+                    let success = await viewModel.deleteMedia(id: mediaItem.id)
+                    if success {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete this media?")
+        }
+        .sheet(isPresented: $showEditSheet) {
+            NavigationView {
+                VStack(spacing: 20) {
+                    CustomTextField(icon: "pencil", placeholder: "Enter new title", text: $editedTitle)
+                    
+                    PrimaryButton(title: "Save Changes", isLoading: false) {
+                        // Optional API call for update
+                        showEditSheet = false
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+                .background(Color(red: 0.04, green: 0.04, blue: 0.05).ignoresSafeArea())
+                .navigationTitle("Edit Title")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") { showEditSheet = false }
+                    }
+                }
+            }
+        }
     }
+    
+    @Environment(\.presentationMode) var presentationMode
     
     private func formatTime(_ time: Double) -> String {
         if time.isNaN || time.isInfinite { return "0:00" }
