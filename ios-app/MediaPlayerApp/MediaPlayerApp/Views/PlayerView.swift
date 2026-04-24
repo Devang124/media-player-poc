@@ -64,8 +64,9 @@ struct PlayerView: View {
                 // Visual Content / Video
                 VStack {
                     ZStack {
-                        // Thumbnail Placeholder (Always shown until video is ready and playing)
-                        if !playerManager.isPlaying || playerManager.isLoading {
+                        // Thumbnail Placeholder
+                        // Shown for videos until ready, or ALWAYS shown for music
+                        if mediaItem.type == .music || !playerManager.isPlaying || playerManager.isLoading {
                             if let urlString = mediaItem.thumbnailUrl, let url = URL(string: urlString) {
                                 AsyncImage(url: url) { phase in
                                     if let image = phase.image {
