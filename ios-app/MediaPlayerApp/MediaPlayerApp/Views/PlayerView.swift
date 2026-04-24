@@ -14,7 +14,7 @@ struct PlayerView: View {
                 // Header
                 HStack {
                     Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                        Image(systemName: "chevron.down")
+                        Image(systemName: "chevron.left")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                             .padding(16)

@@ -3,7 +3,7 @@ import Foundation
 class MediaService {
     static let shared = MediaService()
     
-    private let baseURL = "http://localhost:3000/api/media/search"
+    private let baseURL = "http://10.0.61.110:3000/api/media/search"
     
     func searchMedia(query: String) async throws -> [MediaItem] {
         guard !query.isEmpty else {

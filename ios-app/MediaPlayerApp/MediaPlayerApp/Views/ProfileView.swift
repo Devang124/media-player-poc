@@ -32,33 +32,7 @@ struct ProfileView: View {
                     
                     Spacer()
                     
-                    // Actions
-                    VStack(spacing: 16) {
-                        Button(action: {
-                            // Edit profile action
-                        }) {
-                            Text("Edit Profile")
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 56)
-                                .background(Color(red: 0.6, green: 0.4, blue: 1.0))
-                                .foregroundColor(.white)
-                                .cornerRadius(16)
-                        }
-                        
-                        Button(action: {
-                            // Logout action placeholder
-                        }) {
-                            Text("Log Out")
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 56)
-                                .background(Color.red.opacity(0.1))
-                                .foregroundColor(.red)
-                                .cornerRadius(16)
-                                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.red.opacity(0.3), lineWidth: 1))
-                        }
-                    }
+                    // Actions removed as requested
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)

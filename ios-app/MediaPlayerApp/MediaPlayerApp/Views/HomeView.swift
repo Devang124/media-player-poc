@@ -51,9 +51,11 @@ struct HomeView: View {
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 Spacer()
-                Button("See All") { }
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundColor(Color(red: 0.6, green: 0.4, blue: 1.0))
+                NavigationLink(destination: SeeAllMediaView(title: title, items: items)) {
+                    Text("See All")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(red: 0.6, green: 0.4, blue: 1.0))
+                }
             }
             
             if items.isEmpty {
@@ -89,17 +91,11 @@ struct MediaCard: View {
                 // Background Thumbnail Image
                 if let thumbUrl = item.thumbnailUrl, let url = URL(string: thumbUrl) {
                     AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let image):
+                        if let image = phase.image {
                             image
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                                .frame(width: 180, height: 240)
-                                .clipped()
-                                .cornerRadius(24)
-                        case .failure(_), .empty:
-                            placeholderGradient
-                        @unknown default:
+                        } else {
                             placeholderGradient
                         }
                     }
@@ -112,7 +108,9 @@ struct MediaCard: View {
                     .font(.system(size: 40))
                     .shadow(radius: 5)
             }
+            .frame(width: 180, height: 240)
             .cornerRadius(24)
+            .clipped()
             .shadow(color: Color(red: 0.6, green: 0.4, blue: 1.0).opacity(0.3), radius: 15, y: 10)
             
             VStack(alignment: .leading, spacing: 4) {
