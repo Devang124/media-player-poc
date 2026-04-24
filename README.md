@@ -277,10 +277,8 @@ Manual coding was used for:
 
 | Home Screen | Upload Screen | Player Screen |
 |-------------|----------------|----------------|
-| <img width="250" height="550" alt="Simulator Screenshot - iPhone 17 Pro - 2026-04-24 at 16 34 33" src="https://github.com/user-attachments/assets/506d78f4-f75d-4935-b514-ad8cbf359868" />
- | <img width="250" height="550" alt="Simulator Screenshot - iPhone 17 Pro - 2026-04-24 at 16 34 27" src="https://github.com/user-attachments/assets/bca1fbd0-5713-4a2c-82bc-895e8b4846bc" />
- | <img width="250" height="550" alt="Simulator Screenshot - iPhone 17 Pro - 2026-04-24 at 16 38 05" src="https://github.com/user-attachments/assets/d0373776-354d-4ba7-9c5a-289d7d03385f" />
- |
+| <img width="250" height="550" alt="Simulator Screenshot - iPhone 17 Pro - 2026-04-24 at 16 34 33" src="https://github.com/user-attachments/assets/506d78f4-f75d-4935-b514-ad8cbf359868" /> | <img width="250" height="550" alt="Simulator Screenshot - iPhone 17 Pro - 2026-04-24 at 16 34 27" src="https://github.com/user-attachments/assets/bca1fbd0-5713-4a2c-82bc-895e8b4846bc" /> | <img width="250" height="550" alt="Simulator Screenshot - iPhone 17 Pro - 2026-04-24 at 16 38 05" src="https://github.com/user-attachments/assets/d0373776-354d-4ba7-9c5a-289d7d03385f" /> |
+
 ---
 
 # ⚡ Performance Optimizations
