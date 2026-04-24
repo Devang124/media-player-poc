@@ -16,23 +16,23 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "10"
             endingLineNumber = "10"
-            landmarkName = "fetchMusicList()"
+            landmarkName = "searchMedia(query:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "D9D4816F-1F63-4DFD-BC6D-B9B8A7B2D9CE"
+            uuid = "AF965401-A5EE-4BA3-81CB-B3455254A9BE"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "MediaPlayerApp/ViewModels/MediaListViewModel.swift"
+            filePath = "MediaPlayerApp/Services/NetworkService.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "21"
-            endingLineNumber = "21"
-            landmarkName = "refresh()"
+            startingLineNumber = "30"
+            endingLineNumber = "30"
+            landmarkName = "searchMedia(query:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

@@ -1,6 +1,6 @@
 const express = require("express")
 const router = express.Router()
-const { uploadMusic, uploadVideo, getMusicList, getVideoList, deleteMedia } = require("../controllers/mediaController")
+const { uploadMusic, uploadVideo, getMusicList, getVideoList, searchMedia, deleteMedia } = require("../controllers/mediaController")
 const upload = require("../middleware/upload")
 
 // Existing test route
@@ -9,6 +9,9 @@ router.get("/", (req, res) => {
         message: "Media routes working"
     })
 })
+
+// @route   GET /api/media/search
+router.get("/search", searchMedia)
 
 // @route   GET /api/media/music-list
 router.get("/music-list", getMusicList)

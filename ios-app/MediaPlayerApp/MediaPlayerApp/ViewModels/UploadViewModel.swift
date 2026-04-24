@@ -13,22 +13,41 @@ class UploadViewModel: ObservableObject {
     @Published var showSuccessAlert = false
     @Published var errorMessage: String?
     
+    var isFormValid: Bool {
+        !title.isEmpty && selectedFileURL != nil && selectedThumbnailURL != nil
+    }
+    
+    var fileName: String {
+        selectedFileURL?.lastPathComponent ?? "No file selected"
+    }
+    
+    var fileSizeString: String {
+        guard let url = selectedFileURL,
+              let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let size = attributes[.size] as? Int64 else {
+            return ""
+        }
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useKB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: size)
+    }
+    
     func upload() async {
-        guard let fileURL = selectedFileURL, let thumbnailURL = selectedThumbnailURL, !title.isEmpty else {
+        guard isFormValid else {
             errorMessage = "Please enter a title, select a file, and choose a thumbnail image."
             return
         }
         
         isUploading = true
         errorMessage = nil
-        uploadProgress = 0.5 
         
         do {
             try await NetworkService.shared.uploadMedia(
                 type: mediaType,
                 title: title,
-                fileURL: fileURL,
-                thumbnailURL: thumbnailURL
+                fileURL: selectedFileURL!,
+                thumbnailURL: selectedThumbnailURL!
             )
             showSuccessAlert = true
             resetForm()
@@ -39,7 +58,7 @@ class UploadViewModel: ObservableObject {
         isUploading = false
     }
     
-    private func resetForm() {
+    func resetForm() {
         title = ""
         selectedFileURL = nil
         selectedThumbnailURL = nil
